@@ -1,0 +1,464 @@
+name: Comprehensive Testing Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run unit tests with coverage
+        run: pnpm test:unit
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./packages/*/coverage/lcov.info
+          flags: unit
+          name: unit-coverage-${{ matrix.node-version }}
+      
+      - name: Check coverage thresholds
+        run: pnpm test:coverage
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Setup database
+        run: |
+          pnpm db:generate
+          pnpm db:migrate
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+      
+      - name: Run integration tests
+        run: pnpm test:integration
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret
+          API_KEY_SALT: test-salt
+          NODE_ENV: test
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results
+          path: packages/*/test-results/
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: e2euser
+          POSTGRES_PASSWORD: e2epass
+          POSTGRES_DB: e2edb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Install Playwright browsers
+        run: pnpm playwright install --with-deps ${{ matrix.browser }}
+      
+      - name: Build application
+        run: pnpm build
+      
+      - name: Setup database
+        run: |
+          pnpm db:generate
+          pnpm db:migrate
+          pnpm db:seed
+        env:
+          DATABASE_URL: postgresql://e2euser:e2epass@localhost:5432/e2edb
+      
+      - name: Start services
+        run: |
+          pnpm --filter @webhook-proxy/server start &
+          pnpm --filter @webhook-proxy/web preview &
+          sleep 10 # Wait for services to start
+        env:
+          DATABASE_URL: postgresql://e2euser:e2epass@localhost:5432/e2edb
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: e2e-secret
+          API_KEY_SALT: e2e-salt
+          NODE_ENV: production
+      
+      - name: Run E2E tests
+        run: pnpm test:e2e --project=${{ matrix.browser }}
+        env:
+          BASE_URL: http://localhost:3000
+          API_URL: http://localhost:3001
+      
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-artifacts-${{ matrix.browser }}
+          path: |
+            e2e/screenshots/
+            e2e/videos/
+            playwright-report/
+
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: secuser
+          POSTGRES_PASSWORD: secpass
+          POSTGRES_DB: secdb
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run security tests
+        run: pnpm test:security
+        env:
+          DATABASE_URL: postgresql://secuser:secpass@localhost:5432/secdb
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: security-test-secret
+          API_KEY_SALT: security-test-salt
+      
+      - name: Run npm audit
+        run: pnpm audit --production
+        continue-on-error: true
+      
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --all-projects --severity-threshold=high
+      
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'webhook-proxy'
+          path: '.'
+          format: 'HTML'
+      
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            reports/
+            dependency-check-report.html
+
+  chaos-tests:
+    name: Chaos Engineering Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: chaosuser
+          POSTGRES_PASSWORD: chaospass
+          POSTGRES_DB: chaosdb
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run chaos tests
+        run: pnpm test:chaos
+        timeout-minutes: 30
+        env:
+          DATABASE_URL: postgresql://chaosuser:chaospass@localhost:5432/chaosdb
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: chaos-test-secret
+          API_KEY_SALT: chaos-test-salt
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: perfuser
+          POSTGRES_PASSWORD: perfpass
+          POSTGRES_DB: perfdb
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run performance tests
+        run: |
+          # Enable Node.js performance hooks
+          export NODE_OPTIONS="--expose-gc --max-old-space-size=4096"
+          pnpm test:performance
+        timeout-minutes: 45
+        env:
+          DATABASE_URL: postgresql://perfuser:perfpass@localhost:5432/perfdb
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: perf-test-secret
+          API_KEY_SALT: perf-test-salt
+      
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: packages/*/performance-results/
+
+  load-tests:
+    name: Load Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: Setup load test environment
+        run: |
+          docker-compose -f docker-compose.yml up -d
+          sleep 30 # Wait for services to be ready
+          pnpm load-test:setup
+      
+      - name: Run load tests
+        run: |
+          k6 run load-tests/webhook-processing.test.ts \
+            --out json=load-test-results.json \
+            --summary-export=load-test-summary.json
+        env:
+          BASE_URL: http://localhost:3001
+          API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
+      
+      - name: Upload load test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: load-test-results
+          path: |
+            load-test-results.json
+            load-test-summary.json
+      
+      - name: Performance regression check
+        run: |
+          # Compare with previous results
+          node scripts/check-performance-regression.js load-test-summary.json
+
+  test-summary:
+    name: Test Summary
+    needs: [unit-tests, integration-tests, e2e-tests, security-tests, chaos-tests, performance-tests, load-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: Generate test report
+        run: |
+          echo "# Test Summary Report" > test-summary.md
+          echo "Generated on: $(date)" >> test-summary.md
+          echo "" >> test-summary.md
+          
+          echo "## Test Results" >> test-summary.md
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> test-summary.md
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> test-summary.md
+          echo "- E2E Tests: ${{ needs.e2e-tests.result }}" >> test-summary.md
+          echo "- Security Tests: ${{ needs.security-tests.result }}" >> test-summary.md
+          echo "- Chaos Tests: ${{ needs.chaos-tests.result }}" >> test-summary.md
+          echo "- Performance Tests: ${{ needs.performance-tests.result }}" >> test-summary.md
+          echo "- Load Tests: ${{ needs.load-tests.result }}" >> test-summary.md
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('test-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+      
+      - name: Fail if any tests failed
+        if: |
+          needs.unit-tests.result == 'failure' ||
+          needs.integration-tests.result == 'failure' ||
+          needs.e2e-tests.result == 'failure' ||
+          needs.security-tests.result == 'failure'
+        run: exit 1

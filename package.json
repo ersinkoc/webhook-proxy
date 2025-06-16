@@ -1,0 +1,88 @@
+{
+  "name": "webhook-proxy",
+  "version": "1.0.0",
+  "description": "Open source webhook proxy service for testing webhooks locally",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "test-utils"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:security": "turbo run test:security",
+    "test:chaos": "turbo run test:chaos",
+    "test:performance": "turbo run test:performance",
+    "test:load": "k6 run load-tests/webhook-processing.test.ts",
+    "test:coverage": "turbo run test:coverage",
+    "test:coverage:report": "nyc report --reporter=html",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:security",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:migrate": "pnpm --filter @ersinkoc/webhook-proxy-server db:migrate",
+    "db:generate": "pnpm --filter @ersinkoc/webhook-proxy-server db:generate",
+    "db:seed": "pnpm --filter @ersinkoc/webhook-proxy-server db:seed",
+    "load-test:setup": "ts-node scripts/setup-load-test.ts",
+    "publish:npm": "node scripts/publish.js",
+    "publish:npm:dry-run": "node scripts/publish.js --dry-run",
+    "publish:npm:force": "node scripts/publish.js --force",
+    "publish:npm:shell": "./scripts/publish.sh",
+    "test:publish": "node scripts/test-publish.js",
+    "validate:publish": "node scripts/pre-publish-checks.js",
+    "pre-commit": "lint-staged",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "nyc": "^15.1.0",
+    "prettier": "^3.2.4",
+    "turbo": "^1.11.3",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "pnpm@8.14.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,md}": [
+      "prettier --write"
+    ]
+  },
+  "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "all": true,
+    "check-coverage": true,
+    "reporter": ["text", "lcov", "html"],
+    "branches": 80,
+    "lines": 90,
+    "functions": 85,
+    "statements": 90,
+    "exclude": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "**/test/**",
+      "**/tests/**",
+      "**/coverage/**",
+      "**/dist/**",
+      "**/node_modules/**"
+    ]
+  }
+}

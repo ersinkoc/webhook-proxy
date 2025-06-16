@@ -1,0 +1,74 @@
+{
+  "categories": [
+    {
+      "title": "## 🚀 Features",
+      "labels": ["enhancement", "feature"]
+    },
+    {
+      "title": "## 🐛 Bug Fixes",
+      "labels": ["bug", "fix"]
+    },
+    {
+      "title": "## 🧰 Maintenance",
+      "labels": ["chore", "maintenance"]
+    },
+    {
+      "title": "## 📚 Documentation",
+      "labels": ["documentation", "docs"]
+    },
+    {
+      "title": "## 🔒 Security",
+      "labels": ["security"]
+    }
+  ],
+  "ignore_labels": [
+    "ignore"
+  ],
+  "sort": {
+    "order": "ASC",
+    "on_property": "mergedAt"
+  },
+  "template": "${{CHANGELOG}}",
+  "pr_template": "- ${{TITLE}} (#${{NUMBER}}) @${{AUTHOR}}",
+  "empty_template": "No changes",
+  "label_extractor": [
+    {
+      "pattern": "^(feat|feature)",
+      "target": "enhancement"
+    },
+    {
+      "pattern": "^fix",
+      "target": "bug"
+    },
+    {
+      "pattern": "^docs",
+      "target": "documentation"
+    },
+    {
+      "pattern": "^chore",
+      "target": "chore"
+    }
+  ],
+  "duplicate_filter": {
+    "pattern": ".*",
+    "on_property": "title",
+    "method": "match"
+  },
+  "transformers": [],
+  "max_tags_to_fetch": 200,
+  "max_pull_requests": 200,
+  "max_back_track_time_days": 365,
+  "exclude_merge_branches": [
+    "main"
+  ],
+  "tag_resolver": {
+    "method": "semver",
+    "filter": {
+      "pattern": "v[0-9]+\\.[0-9]+\\.[0-9]+",
+      "flags": ""
+    }
+  },
+  "base_branches": [
+    "main"
+  ]
+}

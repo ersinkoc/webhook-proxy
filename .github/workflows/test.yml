@@ -1,0 +1,264 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: 8
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run unit tests
+        run: pnpm test:unit
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-unit
+          path: packages/*/coverage
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: webhook_proxy_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/webhook_proxy_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-secret
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Generate Prisma client
+        run: pnpm db:generate
+      
+      - name: Run migrations
+        run: pnpm db:migrate
+      
+      - name: Run integration tests
+        run: pnpm test:integration
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-integration
+          path: packages/*/coverage
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: webhook_proxy_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/webhook_proxy_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-secret
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      
+      - name: Build application
+        run: pnpm build
+      
+      - name: Generate Prisma client
+        run: pnpm db:generate
+      
+      - name: Run migrations
+        run: pnpm db:migrate
+      
+      - name: Seed test data
+        run: pnpm db:seed
+      
+      - name: Run E2E tests
+        run: pnpm test:e2e
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  load-tests:
+    name: Load Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: webhook_proxy_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/webhook_proxy_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-secret
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build application
+        run: pnpm build
+      
+      - name: Generate Prisma client
+        run: pnpm db:generate
+      
+      - name: Run migrations
+        run: pnpm db:migrate
+      
+      - name: Setup load test users
+        run: pnpm load-test:setup
+      
+      - name: Start server
+        run: |
+          pnpm --filter @webhook-proxy/server start &
+          sleep 10
+      
+      - name: Run load tests
+        run: |
+          k6 run --scenario=smoke load-tests/webhook-load-test.js
+          k6 run --scenario=load load-tests/api-load-test.js
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: load-test-results
+          path: summary.json
