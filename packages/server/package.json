@@ -1,0 +1,70 @@
+{
+  "name": "@ersinkoc/webhook-proxy-server",
+  "version": "1.0.0",
+  "description": "Webhook proxy server",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:unit": "jest --testPathPattern=src/__tests__/.*\\.test\\.ts$ --testPathIgnorePatterns=integration|security|chaos|performance",
+    "test:integration": "jest --testPathPattern=src/__tests__/integration/.*\\.test\\.ts$ --runInBand",
+    "test:security": "jest --testPathPattern=src/__tests__/security/.*\\.test\\.ts$",
+    "test:chaos": "jest --testPathPattern=src/__tests__/chaos/.*\\.test\\.ts$ --runInBand",
+    "test:performance": "jest --testPathPattern=src/__tests__/performance/.*\\.test\\.ts$ --runInBand",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist coverage",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:prod": "prisma migrate deploy",
+    "db:seed": "tsx src/db/seed.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.5.0",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/jwt": "^8.0.0",
+    "@fastify/rate-limit": "^9.1.0",
+    "@prisma/client": "^5.8.1",
+    "@ersinkoc/webhook-proxy-shared": "workspace:*",
+    "axios": "^1.6.5",
+    "bullmq": "^5.1.4",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.25.2",
+    "fastify-plugin": "^4.5.1",
+    "ioredis": "^5.3.2",
+    "nanoid": "^5.0.4",
+    "p-retry": "^6.2.0",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1",
+    "socket.io": "^4.6.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.11.0",
+    "@ersinkoc/webhook-proxy-test-utils": "workspace:*",
+    "jest": "^29.7.0",
+    "prisma": "^5.8.1",
+    "supertest": "^6.3.4",
+    "ts-jest": "^29.1.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "jest": {
+    "preset": "../../jest.config.base.js",
+    "setupFilesAfterEnv": ["<rootDir>/src/__tests__/setup.ts"],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 85,
+        "lines": 90,
+        "statements": 90
+      }
+    }
+  }
+}

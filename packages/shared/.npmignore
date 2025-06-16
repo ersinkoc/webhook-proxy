@@ -1,0 +1,49 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Development
+.env*
+.DS_Store
+*.log
+coverage/
+.nyc_output/
+node_modules/
+
+# Testing
+test/
+__tests__/
+*.test.*
+*.spec.*
+jest.config.*
+.coverage/
+
+# Build artifacts
+tsconfig.json
+tsconfig.*.json
+.tsbuildinfo
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+.gitignore
+.eslintrc*
+.prettierrc*
+
+# Backup files
+backups/
