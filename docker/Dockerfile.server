@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Install pnpm
 RUN corepack enable
@@ -27,7 +27,7 @@ WORKDIR /app/packages/server
 RUN pnpm prisma generate
 
 # Production stage
-FROM node:18-alpine
+FROM node:24-alpine
 
 # Install pnpm
 RUN corepack enable
