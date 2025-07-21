@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import pRetry from 'p-retry';
-import { WebhookDeliveryResult } from '@webhook-proxy/shared';
+import { WebhookDeliveryResult } from '@ersinkoc/webhook-proxy-shared';
 import { logger } from '../utils/logger';
 import { config } from '../config';
 

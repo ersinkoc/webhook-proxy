@@ -1,11 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { ApiResponse } from '@webhook-proxy/shared';
-
-const loginSchema = z.object({
-  email: z.string().email(),
-});
+import { ApiResponse } from '@ersinkoc/webhook-proxy-shared';
 
 const createUserSchema = z.object({
   email: z.string().email(),
@@ -101,9 +97,9 @@ export async function authRoutes(app: FastifyInstance) {
         success: true,
         data: {
           user: {
-            id: request.user!.id,
-            email: request.user!.email,
-            apiKey: request.user!.apiKey,
+            id: request.authenticatedUser!.id,
+            email: request.authenticatedUser!.email,
+            apiKey: request.authenticatedUser!.apiKey,
           },
         },
       } satisfies ApiResponse);
@@ -115,8 +111,8 @@ export async function authRoutes(app: FastifyInstance) {
     onRequest: [app.authenticate],
     handler: async (request, reply) => {
       const token = app.jwt.sign({
-        userId: request.user!.id,
-        apiKey: request.user!.apiKey,
+        userId: request.authenticatedUser!.id,
+        apiKey: request.authenticatedUser!.apiKey,
       });
 
       return reply.send({

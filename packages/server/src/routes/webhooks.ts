@@ -3,12 +3,10 @@ import { z } from 'zod';
 import { 
   ApiResponse, 
   Webhook,
-  WebhookFilters,
   PaginatedResponse,
   parseHeaders 
-} from '@webhook-proxy/shared';
+} from '@ersinkoc/webhook-proxy-shared';
 import { WebhookForwarder } from '../services/webhook-forwarder';
-import { config } from '../config';
 
 const querySchema = z.object({
   endpointId: z.string().optional(),
@@ -39,7 +37,7 @@ export async function webhookRoutes(app: FastifyInstance) {
       
       // Ensure user can only see their own webhooks
       where.endpoint = {
-        userId: request.user!.id,
+        userId: request.authenticatedUser!.id,
       };
 
       if (filters.endpointId) {
@@ -118,7 +116,7 @@ export async function webhookRoutes(app: FastifyInstance) {
         where: {
           id,
           endpoint: {
-            userId: request.user!.id,
+            userId: request.authenticatedUser!.id,
           },
         },
       });
@@ -164,7 +162,7 @@ export async function webhookRoutes(app: FastifyInstance) {
         where: {
           id,
           endpoint: {
-            userId: request.user!.id,
+            userId: request.authenticatedUser!.id,
           },
         },
         include: {
@@ -236,7 +234,7 @@ export async function webhookRoutes(app: FastifyInstance) {
         where: {
           id,
           endpoint: {
-            userId: request.user!.id,
+            userId: request.authenticatedUser!.id,
           },
         },
       });
@@ -268,7 +266,7 @@ export async function webhookRoutes(app: FastifyInstance) {
       const endpoint = await app.prisma.endpoint.findFirst({
         where: {
           id: endpointId,
-          userId: request.user!.id,
+          userId: request.authenticatedUser!.id,
         },
       });
 
@@ -391,7 +389,7 @@ export async function webhookRoutes(app: FastifyInstance) {
     return reply.send({
       success: true,
       message: 'Webhook received',
-      webhookId: webhook.id,
+      data: { webhookId: webhook.id },
     } satisfies ApiResponse);
       },
     });

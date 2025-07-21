@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Webhook, Copy, ExternalLink, MoreVertical, Trash2, RefreshCw, Power } from 'lucide-react';
 import { Menu } from '@headlessui/react';
 import { api } from '@/lib/api';
-import { EndpointWithStats, CreateEndpointDto } from '@webhook-proxy/shared';
+import { EndpointWithStats } from '@ersinkoc/webhook-proxy-shared';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';

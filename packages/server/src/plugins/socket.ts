@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { Server } from 'socket.io';
 import { config } from '../config';
-import { WebhookEvent } from '@webhook-proxy/shared';
+import { WebhookEvent } from '@ersinkoc/webhook-proxy-shared';
 
 declare module 'fastify' {
   interface FastifyInstance {

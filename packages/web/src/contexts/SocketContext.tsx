@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { WebhookEvent } from '@webhook-proxy/shared';
+import { WebhookEvent } from '@ersinkoc/webhook-proxy-shared';
 import { useAuthStore } from '@/store/auth';
 import toast from 'react-hot-toast';
 

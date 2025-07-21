@@ -2,9 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Activity, Webhook, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
-import { EndpointWithStats, Webhook as WebhookType } from '@webhook-proxy/shared';
+import { EndpointWithStats, Webhook as WebhookType } from '@ersinkoc/webhook-proxy-shared';
 import { formatDistanceToNow } from 'date-fns';
-import clsx from 'clsx';
 
 export function Dashboard() {
   const { data: endpoints } = useQuery({

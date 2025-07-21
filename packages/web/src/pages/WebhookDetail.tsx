@@ -1,8 +1,8 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Copy, RefreshCw, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Webhook } from '@webhook-proxy/shared';
+import { Webhook } from '@ersinkoc/webhook-proxy-shared';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';

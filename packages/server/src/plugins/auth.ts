@@ -6,13 +6,21 @@ import { User } from '@prisma/client';
 
 declare module 'fastify' {
   interface FastifyRequest {
-    user?: User;
+    authenticatedUser?: User;
+  }
+  
+  interface FastifyInstance {
+    authenticate: (request: FastifyRequest) => Promise<void>;
   }
 }
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
     payload: {
+      userId: string;
+      apiKey: string;
+    };
+    user: {
       userId: string;
       apiKey: string;
     };
@@ -41,7 +49,7 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
           throw new Error('Invalid API key');
         }
 
-        request.user = user;
+        request.authenticatedUser = user;
         return;
       }
 
@@ -52,7 +60,7 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
         throw new Error('Missing authentication');
       }
 
-      const decoded = await request.jwtVerify();
+      const decoded = await request.jwtVerify() as { userId: string; apiKey: string };
       
       const user = await app.prisma.user.findUnique({
         where: { id: decoded.userId },
@@ -62,9 +70,11 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
         throw new Error('User not found');
       }
 
-      request.user = user;
+      request.authenticatedUser = user;
     } catch (error) {
-      throw app.httpErrors.unauthorized('Authentication required');
+      const err = new Error('Authentication required');
+      (err as any).statusCode = 401;
+      throw err;
     }
   });
 });

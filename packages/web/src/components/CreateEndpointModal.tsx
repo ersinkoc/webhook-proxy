@@ -3,7 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { CreateEndpointDto } from '@webhook-proxy/shared';
+import { CreateEndpointDto } from '@ersinkoc/webhook-proxy-shared';
 import toast from 'react-hot-toast';
 
 interface CreateEndpointModalProps {

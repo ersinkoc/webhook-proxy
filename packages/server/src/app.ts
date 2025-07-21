@@ -1,4 +1,4 @@
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -13,7 +13,7 @@ import { webhookRoutes } from './routes/webhooks';
 import { authRoutes } from './routes/auth';
 import { healthRoutes } from './routes/health';
 
-export async function buildApp(): Promise<FastifyInstance> {
+export async function buildApp() {
   const app = Fastify({
     logger,
     trustProxy: true,
@@ -32,8 +32,6 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(rateLimit, {
     max: config.rateLimit.max,
     timeWindow: config.rateLimit.windowMs,
-    skipFailedRequests: false,
-    skipSuccessfulRequests: false,
     keyGenerator: (request) => {
       return request.headers['x-api-key'] as string || request.ip;
     },

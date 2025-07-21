@@ -8,7 +8,7 @@ import {
   UpdateEndpointDto,
   EndpointWithStats,
   PaginatedResponse 
-} from '@webhook-proxy/shared';
+} from '@ersinkoc/webhook-proxy-shared';
 
 const createEndpointSchema = z.object({
   name: z.string().min(1).max(100),
@@ -38,7 +38,7 @@ export async function endpointRoutes(app: FastifyInstance) {
       const offset = (page - 1) * pageSize;
 
       const where = {
-        userId: request.user!.id,
+        userId: request.authenticatedUser!.id,
         ...(search && {
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
@@ -109,7 +109,7 @@ export async function endpointRoutes(app: FastifyInstance) {
       const endpoint = await app.prisma.endpoint.findFirst({
         where: {
           id,
-          userId: request.user!.id,
+          userId: request.authenticatedUser!.id,
         },
         include: {
           _count: {
@@ -165,7 +165,7 @@ export async function endpointRoutes(app: FastifyInstance) {
           targetUrl,
           slug: nanoid(8),
           apiKey: `whep_${crypto.randomBytes(16).toString('hex')}`,
-          userId: request.user!.id,
+          userId: request.authenticatedUser!.id,
         },
       });
 
@@ -201,7 +201,7 @@ export async function endpointRoutes(app: FastifyInstance) {
       const endpoint = await app.prisma.endpoint.findFirst({
         where: {
           id,
-          userId: request.user!.id,
+          userId: request.authenticatedUser!.id,
         },
       });
 
@@ -259,7 +259,7 @@ export async function endpointRoutes(app: FastifyInstance) {
       const endpoint = await app.prisma.endpoint.findFirst({
         where: {
           id,
-          userId: request.user!.id,
+          userId: request.authenticatedUser!.id,
         },
       });
 
@@ -289,7 +289,7 @@ export async function endpointRoutes(app: FastifyInstance) {
       const endpoint = await app.prisma.endpoint.findFirst({
         where: {
           id,
-          userId: request.user!.id,
+          userId: request.authenticatedUser!.id,
         },
       });
 

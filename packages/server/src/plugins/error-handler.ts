@@ -1,10 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { ZodError } from 'zod';
-import { ApiError } from '@webhook-proxy/shared';
+import { ApiError } from '@ersinkoc/webhook-proxy-shared';
 
 export const errorHandler = fp(async (app: FastifyInstance) => {
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler((error, _request, reply) => {
     const { validation, statusCode = 500 } = error;
 
     // Handle Fastify validation errors
@@ -13,7 +13,6 @@ export const errorHandler = fp(async (app: FastifyInstance) => {
         statusCode: 400,
         error: 'Bad Request',
         message: 'Validation error',
-        details: validation,
       } satisfies ApiError);
     }
 
@@ -22,14 +21,13 @@ export const errorHandler = fp(async (app: FastifyInstance) => {
       return reply.status(400).send({
         statusCode: 400,
         error: 'Bad Request',
-        message: 'Validation error',
-        details: error.errors,
+        message: `Validation error: ${error.errors.map(e => e.message).join(', ')}`,
       } satisfies ApiError);
     }
 
     // Handle custom API errors
     if ('statusCode' in error && 'error' in error) {
-      return reply.status(error.statusCode).send(error);
+      return reply.status(error.statusCode!).send(error);
     }
 
     // Log unexpected errors

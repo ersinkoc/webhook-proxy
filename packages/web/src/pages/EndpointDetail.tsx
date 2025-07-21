@@ -4,17 +4,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Copy, 
   ExternalLink, 
-  RefreshCw, 
   Trash2, 
   Clock, 
   CheckCircle, 
   XCircle,
   ArrowLeft,
-  Filter,
   Download
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { EndpointWithStats, Webhook, WebhookEvent } from '@webhook-proxy/shared';
+import { EndpointWithStats, Webhook, WebhookEvent } from '@ersinkoc/webhook-proxy-shared';
 import { formatDistanceToNow } from 'date-fns';
 import { useSocket } from '@/contexts/SocketContext';
 import toast from 'react-hot-toast';
@@ -69,7 +67,7 @@ export function EndpointDetail() {
 
     subscribeToEndpoint(id);
 
-    const handleWebhookEvent = (event: WebhookEvent) => {
+    const handleWebhookEvent = (_event: WebhookEvent) => {
       // Refetch webhooks when new events arrive
       refetchWebhooks();
       queryClient.invalidateQueries({ queryKey: ['endpoint', id] });

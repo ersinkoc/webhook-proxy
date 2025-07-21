@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AuthUser } from '@webhook-proxy/shared';
+import { AuthUser } from '@ersinkoc/webhook-proxy-shared';
 import { api } from '@/lib/api';
 
 interface AuthState {
