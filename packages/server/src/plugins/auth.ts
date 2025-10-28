@@ -39,6 +39,11 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
     try {
       // Check for API key in header
       const apiKey = request.headers['x-api-key'] as string;
+      const token = request.headers.authorization?.replace('Bearer ', '');
+
+      if (apiKey && token) {
+        throw new Error('Provide either an API key or a JWT token, not both');
+      }
       
       if (apiKey) {
         const user = await app.prisma.user.findUnique({

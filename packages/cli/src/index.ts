@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { version } from '../package.json';
+const { default: { version } } = await import('../package.json', { assert: { type: 'json' } });
 import { init } from './commands/init.js';
 import { login } from './commands/login.js';
 import { logout } from './commands/logout.js';

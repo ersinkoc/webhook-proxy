@@ -2,10 +2,11 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { 
   ApiResponse, 
-  Webhook,
+  Webhook as SharedWebhook,
   PaginatedResponse,
   parseHeaders 
 } from '@ersinkoc/webhook-proxy-shared';
+import { Webhook } from '@prisma/client';
 import { WebhookForwarder } from '../services/webhook-forwarder';
 
 const querySchema = z.object({
@@ -76,7 +77,7 @@ export async function webhookRoutes(app: FastifyInstance) {
         app.prisma.webhook.count({ where }),
       ]);
 
-      const webhookData: Webhook[] = webhooks.map((webhook) => ({
+      const webhookData: SharedWebhook[] = webhooks.map((webhook: Webhook) => ({
         id: webhook.id,
         endpointId: webhook.endpointId,
         method: webhook.method,
@@ -352,15 +353,17 @@ export async function webhookRoutes(app: FastifyInstance) {
       },
     });
 
-    // Forward webhook asynchronously
-    forwarder.forwardWebhook({
-      webhookId: webhook.id,
-      targetUrl: endpoint.targetUrl,
-      method: request.method,
-      headers,
-      query,
-      body,
-    }).then(async (result) => {
+// Forward webhook synchronously
+try {
+  const result = await forwarder.forwardWebhook({
+    webhookId: webhook.id,
+    targetUrl: endpoint.targetUrl,
+    method: request.method,
+    headers,
+    query,
+    body,
+  });
+
       // Update webhook with delivery result
       await app.prisma.webhook.update({
         where: { id: webhook.id },
@@ -381,16 +384,27 @@ export async function webhookRoutes(app: FastifyInstance) {
           ...result,
         },
       });
-    }).catch((error) => {
-      app.log.error(`Failed to forward webhook ${webhook.id}:`, error);
-    });
 
-    // Respond immediately
-    return reply.send({
-      success: true,
-      message: 'Webhook received',
-      data: { webhookId: webhook.id },
-    } satisfies ApiResponse);
+  // Respond after forwarding is complete
+  return reply.send({
+    success: true,
+    message: 'Webhook received and forwarded',
+    data: {
+      webhookId: webhook.id,
+      delivery: result,
+    },
+  } satisfies ApiResponse);
+
+} catch (error) {
+  app.log.error(`Failed to forward webhook ${webhook.id}:`, error);
+
+  // Still respond to the original sender, but indicate failure
+  return reply.status(500).send({
+    success: false,
+    message: 'Failed to forward webhook',
+    error: error instanceof Error ? error.message : 'Unknown error',
+  } satisfies ApiResponse);
+}
       },
     });
   }, { prefix: '' }); // Register at root level, not under /api/webhooks
