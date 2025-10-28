@@ -1,9 +1,9 @@
 import chalk from 'chalk';
 import { createApiClient } from '../api.js';
 import { getApiUrl } from '../config.js';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { formatDistanceToNow } from 'date-fns';
-import { WebhookEvent } from '@webhook-proxy/shared';
+import { WebhookEvent } from '@ersinkoc/webhook-proxy-shared';
 
 export async function logs(endpointId: string, options: { follow?: boolean; lines?: string }) {
   try {

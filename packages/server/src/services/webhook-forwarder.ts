@@ -114,6 +114,8 @@ export class WebhookForwarder {
       'content-length',
       'connection',
       'accept-encoding',
+      'cookie',
+      'authorization',
       'cf-', // Cloudflare headers
       'x-forwarded-', // Proxy headers
     ];

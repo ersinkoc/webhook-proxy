@@ -284,6 +284,27 @@ describe('Security Testing', () => {
         expect(response.statusCode).toBe(401);
       }
     });
+
+    it('should reject requests with both API key and JWT token', async () => {
+      const loginResponse = await app.inject({
+        method: 'POST',
+        url: '/api/auth/login',
+        payload: { apiKey: testApiKey },
+      });
+
+      const { token } = JSON.parse(loginResponse.payload).data;
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/endpoints',
+        headers: {
+          'X-API-Key': testApiKey,
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
   });
 
   describe('Rate limiting', () => {
@@ -330,6 +351,7 @@ describe('Security Testing', () => {
       expect(successful.length).toBeGreaterThanOrEqual(1000);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
+
   });
 
   describe('Headers & CORS', () => {

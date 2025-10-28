@@ -47,7 +47,6 @@
   "devDependencies": {
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.0",
-    "@ersinkoc/webhook-proxy-test-utils": "workspace:*",
     "jest": "^29.7.0",
     "prisma": "^5.8.1",
     "supertest": "^6.3.4",

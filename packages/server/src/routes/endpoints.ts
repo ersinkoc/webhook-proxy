@@ -9,6 +9,7 @@ import {
   EndpointWithStats,
   PaginatedResponse 
 } from '@ersinkoc/webhook-proxy-shared';
+import { Endpoint } from '@prisma/client';
 
 const createEndpointSchema = z.object({
   name: z.string().min(1).max(100),
@@ -63,7 +64,7 @@ export async function endpointRoutes(app: FastifyInstance) {
       ]);
 
       const endpointsWithStats: EndpointWithStats[] = await Promise.all(
-        endpoints.map(async (endpoint) => {
+        endpoints.map(async (endpoint: Endpoint & { _count: { webhooks: number } }) => {
           const lastWebhook = await app.prisma.webhook.findFirst({
             where: { endpointId: endpoint.id },
             orderBy: { createdAt: 'desc' },
