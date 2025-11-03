@@ -108,7 +108,7 @@ jobs:
       
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: integration-test-results
           path: packages/*/test-results/
@@ -193,7 +193,7 @@ jobs:
       
       - name: Upload test artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: e2e-artifacts-${{ matrix.browser }}
           path: |
@@ -262,7 +262,7 @@ jobs:
       
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: security-reports
           path: |
@@ -357,7 +357,7 @@ jobs:
           API_KEY_SALT: perf-test-salt
       
       - name: Upload performance results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: performance-results
           path: packages/*/performance-results/
@@ -402,7 +402,7 @@ jobs:
           API_KEY: ${{ secrets.LOAD_TEST_API_KEY }}
       
       - name: Upload load test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: load-test-results
           path: |
