@@ -112,13 +112,13 @@ jobs:
         run: pnpm build
       
       - name: Upload server artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: server-dist
           path: packages/server/dist
       
       - name: Upload web artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: web-dist
           path: packages/web/dist
